@@ -11,7 +11,7 @@ import moviepy.video.fx.all as vfx
 def allowed_gai_family(): return socket.AF_INET
 urllib3_cn.allowed_gai_family = allowed_gai_family
 
-# --- Configuration for Business Case Studies ---
+# --- Configuration for Boardveil (Corporate Power Dynamics) ---
 chat_id = os.environ.get('CHAT_ID')
 pexels_key = os.environ.get('PEXELS_API_KEY')
 scenes_data = json.loads(os.environ.get('SCENES_DATA', '[]'))
@@ -20,9 +20,9 @@ bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
 if not bot_token or bot_token.strip() == "":
     bot_token = '8970872207:AAEJOu4z1-9d6bziOKq3Q9d-mk0ZIhkevX4'
 
-video_title = os.environ.get('TITLE', 'Business Case Study')
-thumbnail_prompt = os.environ.get('THUMBNAIL_PROMPT', 'Cinematic business thumbnail')
-video_desc = os.environ.get('DESCRIPTION', 'Business case study video.')
+video_title = os.environ.get('TITLE', 'Corporate Power Dynamics')
+thumbnail_prompt = os.environ.get('THUMBNAIL_PROMPT', 'Dark cinematic corporate boardroom thriller thumbnail')
+video_desc = os.environ.get('DESCRIPTION', 'Corporate power dynamics and wealth psychology documentary.')
 
 TARGET_W, TARGET_H = 1920, 1080
 used_videos = set()
@@ -31,7 +31,7 @@ last_successful_media = None
 
 print(f"Total Scenes to render: {len(scenes_data)}")
 
-fallback_env = os.environ.get('FALLBACK_KEYWORDS', 'business corporate, modern office, wall street, trading chart, abstract business')
+fallback_env = os.environ.get('FALLBACK_KEYWORDS', 'skyscraper night, empty boardroom, chess pieces, luxury watch macro, ticking clock')
 FALLBACK_KEYWORDS = [kw.strip() for kw in fallback_env.split(',')]
 
 def extract_visual_keyword(text, fallback_keyword):
@@ -40,10 +40,10 @@ def extract_visual_keyword(text, fallback_keyword):
     clean_words = re.sub(r'[^a-zA-Z\s]', '', text).split()
     ignore_words = {'the', 'and', 'a', 'to', 'of', 'in', 'is', 'that', 'for', 'it', 'as', 'was', 'with', 'on', 'at', 'by', 'this', 'an', 'be', 'are', 'from', 'or', 'have', 'has', 'had', 'not', 'but', 'what', 'all', 'were', 'when', 'we', 'there', 'can', 'an'}
     filtered = [w for w in clean_words if w.lower() not in ignore_words and len(w) > 3]
-    return filtered[0] if filtered else 'business corporate'
+    return filtered[0] if filtered else 'skyscraper night'
 
 # ==========================================
-# Process Each Scene (Business Case Study Engine)
+# Process Each Scene (Boardveil Engine)
 # ==========================================
 for i, scene in enumerate(scenes_data):
     text_line = scene.get('text', ' ').strip() or " "
@@ -220,8 +220,8 @@ else:
     filter_complex += "[0:a]loudnorm=I=-14:LRA=11:TP=-1.5[a_out]; "
     audio_map = "[a_out]"
 
-channel_name = "BD®"
-# 👇 Yahan y=H-th-50 se y=50 kiya gaya hai taaki watermark top-right corner mein aaye 👇
+channel_name = "BV®"
+# 👇 Yahan y=50 rakha gaya hai taaki watermark top-right corner mein aaye 👇
 filter_complex += f"[0:v]eq=contrast=1.05:saturation=1.15,vignette,noise=alls=1:allf=t+u,drawtext=text='{channel_name}':fontcolor=white@0.5:fontsize=45:x=W-tw-50:y=50[v_graded]; "
 current_v_map = "[v_graded]"
 
@@ -251,7 +251,7 @@ print("\n🚀 Uploading Video directly to GitHub Releases...")
 
 run_id = os.environ.get('GITHUB_RUN_ID', str(int(time.time())))
 tag_name = f"vid-{run_id}"
-repo_name = os.environ.get('GITHUB_REPOSITORY', "castleapp2026/Business-Decode-Long") 
+repo_name = os.environ.get('GITHUB_REPOSITORY', "Boardveil38-stack/Boardveil-Long") 
 
 try:
     cmd = ['gh', 'release', 'create', tag_name, 'final_video.mp4', '--repo', repo_name, '--notes', 'Automated Video Render']
