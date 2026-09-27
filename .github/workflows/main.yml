@@ -1,4 +1,4 @@
-name: Auto Render Business Decode Video
+name: Auto Render Boardveil Video
 
 on:
   repository_dispatch:
