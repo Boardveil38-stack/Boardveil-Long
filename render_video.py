@@ -57,7 +57,8 @@ for i, scene in enumerate(scenes_data):
     subprocess.run(['edge-tts', '--voice', 'en-US-ChristopherNeural', '--text', text_line, '--write-media', raw_audio_path])
 
     if os.path.exists(raw_audio_path):
-        audio_filter = "silenceremove=stop_periods=-1:stop_duration=0.3:stop_threshold=-35dB,bass=g=5:f=110,treble=g=3:f=8000"
+        # 👇 FIX 1: -50dB threshold + 0.65s stop_duration (preserves '...' pauses & prevents word clipping) + 0.15s tail pad
+        audio_filter = "silenceremove=stop_periods=-1:stop_duration=0.65:stop_threshold=-50dB,apad=pad_dur=0.15,bass=g=5:f=110,treble=g=3:f=8000"
         subprocess.run(['ffmpeg', '-y', '-i', raw_audio_path, '-af', audio_filter, '-ar', '44100', '-ac', '2', norm_audio_path], check=True)
         out = subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', norm_audio_path])
         scene_duration = float(out.decode('utf-8').strip()) 
@@ -66,9 +67,10 @@ for i, scene in enumerate(scenes_data):
         subprocess.run(['ffmpeg', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-t', str(scene_duration), norm_audio_path], check=True)
 
     final_audio_path = norm_audio_path
-    if os.path.exists("whoosh.mp3") and i > 0:
+    # 👇 FIX 2: Play subtle whoosh (volume 0.25) every 3rd scene so it never drowns out first spoken word
+    if os.path.exists("whoosh.mp3") and i > 0 and i % 3 == 0:
         mixed_audio = f"mixed_audio_{i}.wav"
-        subprocess.run(['ffmpeg', '-y', '-i', norm_audio_path, '-i', 'whoosh.mp3', '-filter_complex', '[0:a][1:a]amix=inputs=2:duration=first:dropout_transition=0[aout]', '-map', '[aout]', '-ar', '44100', '-ac', '2', mixed_audio], check=True)
+        subprocess.run(['ffmpeg', '-y', '-i', norm_audio_path, '-i', 'whoosh.mp3', '-filter_complex', '[1:a]volume=0.25[sfx];[0:a][sfx]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]', '-map', '[aout]', '-ar', '44100', '-ac', '2', mixed_audio], check=True)
         final_audio_path = mixed_audio
 
     # Visual buffer kept for safety, but TS muxing will cut it perfectly to audio length below
@@ -86,7 +88,7 @@ for i, scene in enumerate(scenes_data):
             if is_valid_video: break
             try:
                 time.sleep(random.uniform(1.0, 2.0))
-                page = 1 if query == keyword else random.randint(1, 2)
+                page = random.randint(1, 3) if attempt > 0 or query != keyword else 1
                 url = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query)}&per_page=15&page={page}&orientation=landscape"
                 
                 res = requests.get(url, headers={"Authorization": pexels_key}, timeout=15)
@@ -101,7 +103,11 @@ for i, scene in enumerate(scenes_data):
                     videos = data.get('videos', [])
                     if videos:
                         random.shuffle(videos)
-                        for v in videos[:3]:
+                        # 👇 FIX 3: Strict used_videos check so the same Pexels clip NEVER repeats in the video
+                        unused_videos = [v for v in videos if v.get('id') not in used_videos]
+                        candidates = unused_videos if unused_videos else videos
+                        for v in candidates[:4]:
+                            vid_id = v.get('id')
                             vid_url = v['video_files'][0]['link']
                             for vf in v['video_files']:
                                 if vf.get('quality') == 'hd':
@@ -116,6 +122,8 @@ for i, scene in enumerate(scenes_data):
                                 try:
                                     subprocess.run(['ffprobe', '-v', 'error', raw_media_path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                     is_valid_video = True
+                                    if vid_id:
+                                        used_videos.add(vid_id)
                                     last_successful_media = {"type": "video", "path": raw_media_path}
                                     break
                                 except Exception:
