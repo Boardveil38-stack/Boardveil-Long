@@ -278,7 +278,8 @@ if not video_link:
     video_link = "Upload Failed"
 
 # Telegram Notification (Bypassing n8n webhook)
-safe_description = str(video_desc).replace('\n', '  ')
+# 👇 FIX: New lines (\n) preserve kiye gaye hain, sirf '|' remove kiya hai taaki split na toote
+safe_description = str(video_desc).replace('|', '')
 safe_title = str(video_title).replace('|', '')
 
 if not chat_id or chat_id == "None":
